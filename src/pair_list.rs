@@ -129,7 +129,7 @@ pub fn push(list: Term, term: Term) -> Result<Term, ListError> {
 pub fn pop(term: &mut Term) -> Result<Term, ListError> {
     let mut to_uncons = mem::replace(term, Var(0)); // replace term with a dummy
     let (head, tail) = uncons_mut(&mut to_uncons)?;
-    mem::replace(term, tail.clone()); // replace term with tail
+    *term = tail.clone(); // replace term with tail
 
     Ok(head.clone())
 }

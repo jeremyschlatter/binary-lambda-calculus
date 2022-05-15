@@ -58,15 +58,15 @@ fn decode_byte(encoded_byte: Term) -> Result<u8, Error> {
     }
 }
 
-fn encode_byte(byte: u8) -> Term {
-    let bitstr = format!("{:08b}", byte);
-    let bits = bitstr.as_bytes();
-    listify_terms(
-        bits.into_iter()
-            .map(|&bit| encode_bit(bit))
-            .collect::<Vec<Term>>(),
-    )
-}
+// fn encode_byte(byte: u8) -> Term {
+//     let bitstr = format!("{:08b}", byte);
+//     let bits = bitstr.as_bytes();
+//     listify_terms(
+//         bits.into_iter()
+//             .map(|&bit| encode_bit(bit))
+//             .collect::<Vec<Term>>(),
+//     )
+// }
 
 fn encode_bit(bit: u8) -> Term {
     match bit {
@@ -76,25 +76,25 @@ fn encode_bit(bit: u8) -> Term {
     }
 }
 
-/// Encode bytes as a lambda `Term`.
-///
-/// # Example
-/// ```
-/// use blc::encoding::lambda::encode;
-///
-/// assert_eq!(
-///     &*format!("{:?}", encode(b"a")),
-///     "λ1(λ1(λλ2)(λ1(λλ1)(λ1(λλ1)(λ1(λλ2)(λ1(λλ2)(λ1(λλ2)(λ1(λλ2)(λ1(λλ1)(λλ1)))))))))(λλ1)"
-/// );
-/// ```
-pub fn encode(input: &[u8]) -> Term {
-    listify_terms(
-        input
-            .into_iter()
-            .map(|&b| encode_byte(b))
-            .collect::<Vec<Term>>(),
-    )
-}
+// /// Encode bytes as a lambda `Term`.
+// ///
+// /// # Example
+// /// ```
+// /// use blc::encoding::lambda::encode;
+// ///
+// /// assert_eq!(
+// ///     &*format!("{:?}", encode(b"a")),
+// ///     "λ1(λ1(λλ2)(λ1(λλ1)(λ1(λλ1)(λ1(λλ2)(λ1(λλ2)(λ1(λλ2)(λ1(λλ2)(λ1(λλ1)(λλ1)))))))))(λλ1)"
+// /// );
+// /// ```
+// pub fn encode(input: &[u8]) -> Term {
+//     listify_terms(
+//         input
+//             .into_iter()
+//             .map(|&b| encode_byte(b))
+//             .collect::<Vec<Term>>(),
+//     )
+// }
 
 pub fn encode_bits(input: &[u8]) -> Term {
     listify_terms(
