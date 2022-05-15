@@ -1,4 +1,6 @@
 //! Lambda encoding for strings of bytes
+//!
+//! Copied from https://github.com/ljedrz/blc/blob/6a673cf1b3b1a689e799912ab2b9ef852b810c04/src/encoding/lambda.rs
 
 use crate::pair_list::*;
 use lambda_calculus::data::boolean::{fls, tru};

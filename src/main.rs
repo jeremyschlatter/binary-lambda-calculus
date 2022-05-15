@@ -20,6 +20,8 @@ fn main() {
     }
 }
 
+// Based on the recursion example in the genawaiter repo:
+//   https://github.com/whatisaphone/genawaiter/blob/45c10c223b92da215e182bc3eff0d5e09bf813f4/examples/recursion.rs
 fn length_n_bitstrings(n: i32) -> GenBoxed<String> {
     Gen::new_boxed(|co| async move {
         if n == 0 {

@@ -1,3 +1,5 @@
+// Copied from https://github.com/ljedrz/blc/blob/6a673cf1b3b1a689e799912ab2b9ef852b810c04/src/pair_list.rs
+
 use self::ListError::*;
 use lambda_calculus::data::boolean::fls;
 use lambda_calculus::*;
