@@ -1,16 +1,9 @@
 extern crate blc;
 extern crate genawaiter;
-// extern crate lambda_calculus;
 
-// mod binary;
 mod lambda;
 mod pair_list;
 
-// use blc::*;
-// use blc::execution::Input;
-// use lambda_calculus::{parse, DeBruijn};
-// use blc::execution::Input;
-// use blc::run;
 use genawaiter::{
     sync::{gen, Gen, GenBoxed},
     yield_,
@@ -19,10 +12,6 @@ use lambda_calculus::{abs, app, beta, Term, Var, NOR};
 use std::future::Future;
 
 fn main() {
-    // let prog = b"0010";
-    //     // let prog = b"00100101";
-    // print!("{:?}", run(&*prog, Input::Bytes(b"0101")));
-
     for prog in bitstrings() {
         match exec(prog.as_str()) {
             Some(s) => println!("{} -> {}", prog, s),
