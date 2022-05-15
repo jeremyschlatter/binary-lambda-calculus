@@ -31,6 +31,9 @@ pub fn uncons(term: Term) -> Result<(Term, Term), ListError> {
 }
 
 pub fn uncons_ref(term: &Term) -> Result<(&Term, &Term), ListError> {
+    if !is_list(term) {
+        return Err(NotAList);
+    }
     let candidate = if let Abs(ref abstracted) = *term {
         abstracted
     } else {
