@@ -8,14 +8,76 @@ use genawaiter::{
     sync::{gen, Gen, GenBoxed},
     yield_,
 };
-use lambda_calculus::{abs, app, beta, Term, Var, NOR};
+use lambda_calculus::{beta, Term, Var, NOR};
 use std::future::Future;
 
+macro_rules! cat {
+    ($x:expr) => (format!("{}", $x));
+    ($x:expr, $($y:expr),+) => (format!("{}{}", $x, cat!($($y),+)));
+}
+
+fn var(n: u32) -> String {
+    let mut r = "1".to_string();
+    for _ in 0..n {
+        r.push('1');
+    }
+    r.push('0');
+    paren(r)
+}
+
+fn lam(s: String) -> String {
+    paren(cat!("00", s))
+}
+
+fn fls() -> String {
+    lam(lam(var(0)))
+}
+
+fn tru() -> String {
+    lam(lam(var(1)))
+}
+
+fn paren(s: String) -> String {
+    s
+}
+
+fn app(a: String, b: String) -> String {
+    paren(cat!("01", a, b))
+}
+
+fn pair_fn() -> String {
+    lam(lam(lam(app(app(var(0), var(2)), var(1)))))
+}
+
+fn pair(a: String, b: String) -> String {
+    app(app(pair_fn(), a), b)
+}
+
+fn list(l: &[String]) -> String {
+    let mut r = fls();
+    for s in l {
+        r = pair(s.to_string(), r);
+    }
+    r
+}
+
+fn exec_and_print(s: String) {
+    println!("{}", exec(s.as_str()).unwrap())
+}
+
 fn main() {
+    exec_and_print(lam(list(&[tru()])));
+
     for prog in bitstrings() {
         match exec(prog.as_str()) {
-            Some(s) => println!("{} -> {}", prog, s),
-            None => (),
+            Some(s) => {
+                if s.chars().count() > prog.chars().count() {
+                    println!("{} -> {}", prog, s);
+                } else {
+                    print!("{}\r", prog);
+                }
+            }
+            None => print!("{}\r", prog),
         }
     }
 }
@@ -52,19 +114,23 @@ fn exec(x: &str) -> Option<String> {
 }
 
 fn parse_app(input: &str) -> Option<Term> {
-    let mut iter = input.chars();
-    Some(app(
-        parse(&mut iter)?,
-        lambda::encode_bits(&iter.map(|c| c as u8).collect::<Vec<u8>>()),
-    ))
+    let mut iter = input.chars().peekable();
+    let prog = parse(&mut iter)?;
+    match iter.peek() {
+        _ => Some(lambda_calculus::app(
+            prog,
+            lambda::encode_bits(&iter.map(|c| c as u8).collect::<Vec<u8>>()),
+        )),
+        // None => Some(prog),
+    }
 }
 
-fn parse(chars: &mut std::str::Chars) -> Option<Term> {
+fn parse(chars: &mut std::iter::Peekable<std::str::Chars>) -> Option<Term> {
     if chars.next()? == '0' {
         if chars.next()? == '0' {
-            return Some(abs(parse(chars)?));
+            return Some(lambda_calculus::abs(parse(chars)?));
         }
-        return Some(app(parse(chars)?, parse(chars)?));
+        return Some(lambda_calculus::app(parse(chars)?, parse(chars)?));
     }
     let mut n: usize = 1;
     while chars.next()? == '1' {

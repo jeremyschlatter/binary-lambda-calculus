@@ -3,7 +3,6 @@
 use self::ListError::*;
 use lambda_calculus::data::boolean::fls;
 use lambda_calculus::*;
-use std::mem;
 
 #[derive(Debug, PartialEq)]
 pub enum ListError {
@@ -47,24 +46,6 @@ pub fn uncons_ref(term: &Term) -> Result<(&Term, &Term), ListError> {
             Err(NotAList)
         } else {
             Ok((wrapped_a.rhs_ref().unwrap(), b))
-        }
-    } else {
-        Err(NotAList)
-    }
-}
-
-pub fn uncons_mut(term: &mut Term) -> Result<(&Term, &Term), ListError> {
-    let candidate = if let Abs(ref mut abstracted) = *term {
-        abstracted
-    } else {
-        term
-    };
-
-    if let Ok((wrapped_a, b)) = candidate.unapp_mut() {
-        if wrapped_a.rhs_ref().is_err() {
-            Err(NotAList)
-        } else {
-            Ok((wrapped_a.rhs_mut().unwrap(), b))
         }
     } else {
         Err(NotAList)
@@ -131,29 +112,11 @@ pub fn push(list: Term, term: Term) -> Result<Term, ListError> {
     Ok(abs(app!(Var(1), term, list)))
 }
 
-pub fn pop(term: &mut Term) -> Result<Term, ListError> {
-    let mut to_uncons = mem::replace(term, Var(0)); // replace term with a dummy
-    let (head, tail) = uncons_mut(&mut to_uncons)?;
-    *term = tail.clone(); // replace term with tail
-
-    Ok(head.clone())
-}
-
 pub fn listify_terms(terms: Vec<Term>) -> Term {
     let mut ret = fls();
 
     for term in terms.into_iter().rev() {
         ret = push(ret, term).expect("unwrap 4"); // safe - built from nil()
-    }
-
-    ret
-}
-
-pub fn vectorize_list(mut list: Term) -> Vec<Term> {
-    let mut ret = Vec::new();
-
-    while let Ok(elem) = pop(&mut list) {
-        ret.push(elem);
     }
 
     ret
