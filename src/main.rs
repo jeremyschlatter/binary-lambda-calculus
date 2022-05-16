@@ -8,8 +8,8 @@ use genawaiter::{
     sync::{gen, Gen, GenBoxed},
     yield_,
 };
-use lambda_calculus::{beta, Term, Var, NOR};
-use std::future::Future;
+use lambda_calculus::{app, beta, combinators::*, Term, Var, NOR};
+use std::{future::Future, iter::Iterator};
 
 macro_rules! cat {
     ($x:expr) => (format!("{}", $x));
@@ -33,6 +33,7 @@ fn fls() -> String {
     lam(lam(var(0)))
 }
 
+#[allow(dead_code)]
 fn tru() -> String {
     lam(lam(var(1)))
 }
@@ -41,18 +42,19 @@ fn paren(s: String) -> String {
     s
 }
 
-fn app(a: String, b: String) -> String {
+fn my_app(a: String, b: String) -> String {
     paren(cat!("01", a, b))
 }
 
 fn pair_fn() -> String {
-    lam(lam(lam(app(app(var(0), var(2)), var(1)))))
+    lam(lam(lam(my_app(my_app(var(0), var(2)), var(1)))))
 }
 
 fn pair(a: String, b: String) -> String {
-    app(app(pair_fn(), a), b)
+    my_app(my_app(pair_fn(), a), b)
 }
 
+#[allow(dead_code)]
 fn list(l: &[String]) -> String {
     let mut r = fls();
     for s in l {
@@ -61,17 +63,21 @@ fn list(l: &[String]) -> String {
     r
 }
 
-fn exec_and_print(s: String) {
-    println!("{}", exec(s.as_str()).unwrap())
+#[allow(dead_code)]
+fn exec_and_print(mode: Mode, s: String) {
+    println!("{}", exec(mode, s.as_str()).unwrap())
 }
 
 fn main() {
-    exec_and_print(lam(list(&[tru()])));
+    let mode = Mode::Jot;
+
+    // exec_and_print(mode, lam(list(&[tru()])));
 
     for prog in bitstrings() {
-        match exec(prog.as_str()) {
+        match exec(mode, prog.as_str()) {
             Some(s) => {
-                if s.chars().count() > prog.chars().count() {
+                if s != "" {
+                    // if s.chars().count() > prog.chars().count() {
                     println!("{} -> {}", prog, s);
                 } else {
                     print!("{}\r", prog);
@@ -109,32 +115,61 @@ fn bitstrings() -> Gen<String, (), impl Future<Output = ()>> {
     })
 }
 
-fn exec(x: &str) -> Option<String> {
-    lambda::decode(beta(parse_app(x)?, NOR, 1000)).ok()
+#[derive(Debug, Copy, Clone)]
+#[allow(dead_code)]
+enum Mode {
+    BLC,
+    Jot,
 }
 
-fn parse_app(input: &str) -> Option<Term> {
-    let mut iter = input.chars().peekable();
-    let prog = parse(&mut iter)?;
-    match iter.peek() {
-        _ => Some(lambda_calculus::app(
-            prog,
-            lambda::encode_bits(&iter.map(|c| c as u8).collect::<Vec<u8>>()),
-        )),
-        // None => Some(prog),
-    }
+fn exec(mode: Mode, x: &str) -> Option<String> {
+    lambda::decode(beta(parse_app(mode, x)?, NOR, 1000)).ok()
 }
 
-fn parse(chars: &mut std::iter::Peekable<std::str::Chars>) -> Option<Term> {
-    if chars.next()? == '0' {
-        if chars.next()? == '0' {
-            return Some(lambda_calculus::abs(parse(chars)?));
+fn parse_app(mode: Mode, input: &str) -> Option<Term> {
+    let mut iter = input
+        .chars()
+        .map(|c| match c {
+            '0' => false,
+            '1' => true,
+            _ => unreachable!(),
+        })
+        .peekable();
+    match mode {
+        Mode::BLC => {
+            let prog = parse_blc(&mut iter)?;
+            match iter.peek() {
+                _ => Some(app(
+                    prog,
+                    lambda::encode_bits(&iter.map(|c| c as u8).collect::<Vec<u8>>()),
+                )),
+                // None => Some(prog),
+            }
         }
-        return Some(lambda_calculus::app(parse(chars)?, parse(chars)?));
+        Mode::Jot => Some(parse_jot(&mut iter.rev())),
     }
-    let mut n: usize = 1;
-    while chars.next()? == '1' {
-        n += 1;
+}
+
+fn parse_blc(chars: &mut impl Iterator<Item = bool>) -> Option<Term> {
+    Some(if chars.next()? {
+        let mut n: usize = 1;
+        while chars.next()? {
+            n += 1;
+        }
+        Var(n)
+    } else {
+        if chars.next()? {
+            lambda_calculus::app(parse_blc(chars)?, parse_blc(chars)?)
+        } else {
+            lambda_calculus::abs(parse_blc(chars)?)
+        }
+    })
+}
+
+fn parse_jot(chars: &mut impl Iterator<Item = bool>) -> Term {
+    match chars.next() {
+        Some(false) => app!(parse_jot(chars), S(), K()),
+        Some(true) => app(S(), app(K(), parse_jot(chars))),
+        None => I(),
     }
-    Some(Var(n))
 }

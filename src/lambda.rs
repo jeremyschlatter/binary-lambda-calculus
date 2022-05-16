@@ -28,9 +28,9 @@ pub fn decode(term: Term) -> Result<String, Error> {
     if term == fls() {
         Ok("".into())
     } else if head_ref(&term) == Ok(&fls()) {
-        Ok("1".to_string() + &decode(tail(term).unwrap())?) // safe
-    } else if head_ref(&term) == Ok(&tru()) {
         Ok("0".to_string() + &decode(tail(term).unwrap())?) // safe
+    } else if head_ref(&term) == Ok(&tru()) {
+        Ok("1".to_string() + &decode(tail(term).unwrap())?) // safe
     } else {
         Err(Error::NotAList)
     }
@@ -38,8 +38,8 @@ pub fn decode(term: Term) -> Result<String, Error> {
 
 fn encode_bit(bit: u8) -> Term {
     match bit {
-        b'0' => tru(),
-        b'1' => fls(),
+        1 => tru(),
+        0 => fls(),
         _ => unreachable!(),
     }
 }
